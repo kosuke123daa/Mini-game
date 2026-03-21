@@ -160,6 +160,42 @@ export function requestSpeed(
   return { flipped: false, state: newState };
 }
 
+export function canPlayerPlay(player: PlayerState, centerPiles: Card[][]): boolean {
+  for (const card of player.hand) {
+    for (const pile of centerPiles) {
+      const topCard = pile[pile.length - 1];
+      if (canPlayCard(card, topCard)) return true;
+    }
+  }
+  return false;
+}
+
+export function isStuck(state: GameState): boolean {
+  if (state.status !== "playing") return false;
+  return state.players.every((p) => !canPlayerPlay(p, state.centerPiles));
+}
+
+export function autoFlipFromHands(state: GameState): GameState {
+  const newState: GameState = JSON.parse(JSON.stringify(state));
+
+  for (let i = 0; i < 2; i++) {
+    const player = newState.players[i];
+    if (player.hand.length > 0) {
+      const randomIdx = Math.floor(Math.random() * player.hand.length);
+      const [card] = player.hand.splice(randomIdx, 1);
+      newState.centerPiles[i].push(card);
+      // Draw from stock to refill hand
+      if (player.stock.length > 0 && player.hand.length < 4) {
+        player.hand.push(player.stock.pop()!);
+      }
+    }
+  }
+
+  newState.lastAutoFlipAt = Date.now();
+  newState.lastUpdated = Date.now();
+  return newState;
+}
+
 export function getPlayerView(state: GameState, playerId: string) {
   const playerIdx = state.players.findIndex((p) => p.id === playerId);
   const opponentIdx = playerIdx === 0 ? 1 : 0;
@@ -187,5 +223,6 @@ export function getPlayerView(state: GameState, playerId: string) {
     hasSpeedVote: state.pendingSpeedVotes.includes(playerId),
     opponentHasSpeedVote: state.pendingSpeedVotes.includes(opponent?.id ?? ""),
     lastUpdated: state.lastUpdated,
+    lastAutoFlipAt: state.lastAutoFlipAt,
   };
 }

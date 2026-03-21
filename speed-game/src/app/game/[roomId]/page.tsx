@@ -29,6 +29,7 @@ interface GameView {
   hasSpeedVote: boolean;
   opponentHasSpeedVote: boolean;
   lastUpdated: number;
+  lastAutoFlipAt?: number;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -283,6 +284,7 @@ export default function GamePage({
   const [playing, setPlaying] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUpdatedRef = useRef<number>(0);
+  const lastAutoFlipRef = useRef<number>(0);
 
   const showMessage = useCallback((msg: string, duration = 1500) => {
     setMessage(msg);
@@ -306,6 +308,11 @@ export default function GamePage({
       } else {
         if (data.lastUpdated !== lastUpdatedRef.current) {
           lastUpdatedRef.current = data.lastUpdated;
+          // Detect auto-flip and show notification
+          if (data.lastAutoFlipAt && data.lastAutoFlipAt !== lastAutoFlipRef.current) {
+            lastAutoFlipRef.current = data.lastAutoFlipAt;
+            showMessage("🔀 動けない！手札から補充しました", 2500);
+          }
           setGameView(data);
           setWaitingStatus(null);
         }

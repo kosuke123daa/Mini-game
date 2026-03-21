@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGame, setGame } from "@/lib/store";
-import { playCard } from "@/lib/game";
+import { playCard, isStuck, autoFlipFromHands } from "@/lib/game";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -20,6 +20,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: result.message }, { status: 400 });
   }
 
-  await setGame(roomId, result.state);
+  let finalState = result.state;
+  if (isStuck(finalState)) {
+    const now = Date.now();
+    const lastFlip = finalState.lastAutoFlipAt ?? 0;
+    if (now - lastFlip > 2000) {
+      finalState = autoFlipFromHands(finalState);
+    }
+  }
+
+  await setGame(roomId, finalState);
   return NextResponse.json({ success: true });
 }

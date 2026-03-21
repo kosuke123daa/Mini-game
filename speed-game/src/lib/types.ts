@@ -25,6 +25,7 @@ export interface GameState {
   winner?: string;       // player id
   lastUpdated: number;
   pendingSpeedVotes: string[]; // player ids who voted for speed
+  lastAutoFlipAt?: number;     // timestamp of last auto-flip (stuck detection)
 }
 
 export interface PlayCardAction {
