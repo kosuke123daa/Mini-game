@@ -705,25 +705,6 @@ export default function GamePage({
 
       {/* Center area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        {/* Speed votes indicator */}
-        {(gameView.hasSpeedVote || gameView.opponentHasSpeedVote) && (
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: "8px",
-              color: "#f59e0b",
-              fontSize: "12px",
-              fontWeight: "600",
-            }}
-          >
-            {gameView.hasSpeedVote && gameView.opponentHasSpeedVote
-              ? "⚡ スピード！カード追加中..."
-              : gameView.hasSpeedVote
-              ? "⏳ 相手のスピードを待っています..."
-              : "⚡ 相手がスピード要求中！"}
-          </div>
-        )}
-
         {/* Center piles */}
         <div
           style={{
@@ -813,33 +794,6 @@ export default function GamePage({
             </span>
           )}
         </div>
-
-        {/* Speed button */}
-        <button
-          onClick={handleSpeed}
-          disabled={playing || gameView.hasSpeedVote}
-          style={{
-            width: "100%",
-            padding: "14px",
-            background: gameView.hasSpeedVote
-              ? "#1e3a5f"
-              : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-            color: gameView.hasSpeedVote ? "#64748b" : "#fff",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "18px",
-            fontWeight: "800",
-            cursor: gameView.hasSpeedVote || playing ? "not-allowed" : "pointer",
-            opacity: playing ? 0.7 : 1,
-            letterSpacing: "2px",
-            boxShadow: gameView.hasSpeedVote
-              ? "none"
-              : "0 4px 12px rgba(245,158,11,0.4)",
-            marginBottom: "8px",
-          }}
-        >
-          {gameView.hasSpeedVote ? "⏳ 相手を待機中..." : "⚡ スピード！"}
-        </button>
 
         {/* Room code */}
         <p style={{ textAlign: "center", color: "#334155", fontSize: "11px" }}>

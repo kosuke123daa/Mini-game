@@ -31,11 +31,14 @@ export function canPlayCard(card: Card, topCard: Card | undefined): boolean {
 }
 
 export function createGame(roomId: string, player1Id: string, player2Id: string): GameState {
-  const deck = shuffle(createDeck());
+  const allCards = createDeck();
 
-  // Deal 26 cards to each player
-  const player1Cards = deck.slice(0, 26);
-  const player2Cards = deck.slice(26, 52);
+  // Player 1 gets red cards (hearts + diamonds), Player 2 gets black cards (clubs + spades)
+  const redCards = shuffle(allCards.filter((c) => c.suit === "hearts" || c.suit === "diamonds"));
+  const blackCards = shuffle(allCards.filter((c) => c.suit === "clubs" || c.suit === "spades"));
+
+  const player1Cards = redCards;   // 26 red cards
+  const player2Cards = blackCards; // 26 black cards
 
   const player1: PlayerState = {
     id: player1Id,
