@@ -107,7 +107,7 @@ function CardComponent({
 
   if (!card) return null;
 
-  const color = isRed(card.suit) ? "#ef4444" : "#f1f5f9";
+  const color = isRed(card.suit) ? "#dc2626" : "#1e293b";
 
   return (
     <div
