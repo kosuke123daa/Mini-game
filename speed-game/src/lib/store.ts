@@ -20,7 +20,7 @@ function generateId(length = 4): string {
 
 export async function createRoom(playerId: string): Promise<string> {
   const roomId = generateId(4);
-  await kv.set(`room:${roomId}`, { player1Id: playerId }, { ex: ROOM_TTL });
+  await kv.set(`speed:room:${roomId}`, { player1Id: playerId }, { ex: ROOM_TTL });
   return roomId;
 }
 
@@ -28,7 +28,7 @@ export async function joinRoom(
   roomId: string,
   playerId: string
 ): Promise<{ success: boolean; message?: string; isPlayer1: boolean }> {
-  const room = await kv.get<RoomData>(`room:${roomId}`);
+  const room = await kv.get<RoomData>(`speed:room:${roomId}`);
   if (!room) {
     return { success: false, message: "Room not found", isPlayer1: false };
   }
@@ -41,23 +41,23 @@ export async function joinRoom(
     }
     return { success: false, message: "Room is full", isPlayer1: false };
   }
-  await kv.set(`room:${roomId}`, { ...room, player2Id: playerId }, { ex: ROOM_TTL });
+  await kv.set(`speed:room:${roomId}`, { ...room, player2Id: playerId }, { ex: ROOM_TTL });
   return { success: true, isPlayer1: false };
 }
 
 export async function getRoom(roomId: string): Promise<RoomData | null> {
-  return kv.get<RoomData>(`room:${roomId}`);
+  return kv.get<RoomData>(`speed:room:${roomId}`);
 }
 
 export async function getGame(roomId: string): Promise<GameState | undefined> {
-  const data = await kv.get<GameState>(`game:${roomId}`);
+  const data = await kv.get<GameState>(`speed:game:${roomId}`);
   return data ?? undefined;
 }
 
 export async function setGame(roomId: string, state: GameState): Promise<void> {
-  await kv.set(`game:${roomId}`, state, { ex: GAME_TTL });
+  await kv.set(`speed:game:${roomId}`, state, { ex: GAME_TTL });
 }
 
 export async function deleteGame(roomId: string): Promise<void> {
-  await kv.del(`game:${roomId}`, `room:${roomId}`);
+  await kv.del(`speed:game:${roomId}`, `speed:room:${roomId}`);
 }
