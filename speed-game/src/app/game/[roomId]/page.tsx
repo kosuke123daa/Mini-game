@@ -303,13 +303,31 @@ export default function GamePage({
   const [selectedPile, setSelectedPile] = useState<number | null>(null);
   const [message, setMessage] = useState<string>("");
   const [playing, setPlaying] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUpdatedRef = useRef<number>(0);
-  const lastAutoFlipRef = useRef<number>(0);
+  const wasWaitingRef = useRef<boolean>(false);
 
   const showMessage = useCallback((msg: string, duration = 1500) => {
     setMessage(msg);
     setTimeout(() => setMessage(""), duration);
+  }, []);
+
+  const startCountdown = useCallback((from: number) => {
+    setCountdown(from);
+    let remaining = from - 1;
+    const tick = () => {
+      if (remaining > 0) {
+        setCountdown(remaining);
+        remaining--;
+        setTimeout(tick, 1000);
+      } else {
+        setCountdown(0);
+        setTimeout(() => setCountdown(null), 600);
+      }
+    };
+    setTimeout(tick, 1000);
   }, []);
 
   const fetchState = useCallback(async () => {
@@ -321,19 +339,19 @@ export default function GamePage({
       if (!res.ok) return;
       const data = await res.json();
       if (data.status === "waiting") {
+        wasWaitingRef.current = true;
         setWaitingStatus({
           player1Joined: data.player1Joined,
           player2Joined: data.player2Joined,
         });
         setGameView(null);
       } else {
+        if (wasWaitingRef.current && data.status === "playing") {
+          wasWaitingRef.current = false;
+          startCountdown(3);
+        }
         if (data.lastUpdated !== lastUpdatedRef.current) {
           lastUpdatedRef.current = data.lastUpdated;
-          // Detect auto-flip and show notification
-          if (data.lastAutoFlipAt && data.lastAutoFlipAt !== lastAutoFlipRef.current) {
-            lastAutoFlipRef.current = data.lastAutoFlipAt;
-            showMessage("🔀 動けない！手札から補充しました", 2500);
-          }
           setGameView(data);
           setWaitingStatus(null);
         }
@@ -341,7 +359,7 @@ export default function GamePage({
     } catch {
       // ignore network errors
     }
-  }, [roomId, playerId]);
+  }, [roomId, playerId, startCountdown]);
 
   useEffect(() => {
     if (!playerId) {
@@ -401,6 +419,11 @@ export default function GamePage({
   async function handleResume() {
     if (playing) return;
     setPlaying(true);
+    setResumeCountdown(2);
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    setResumeCountdown(1);
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    setResumeCountdown(null);
     try {
       await fetch("/api/game/resume", {
         method: "POST",
@@ -733,27 +756,34 @@ export default function GamePage({
         {/* Stuck state */}
         {gameView.status === "stuck" && (
           <div style={{ textAlign: "center", marginTop: "12px" }}>
-            <p style={{ color: "#f59e0b", fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>
-              両プレイヤーが出せるカードがないため、ランダムで手札からカードを選出して再開します。
+            <p style={{ color: "#f59e0b", fontSize: "13px", fontWeight: "600", marginBottom: "8px", lineHeight: 1.6 }}>
+              両プレイヤーが出せるカードがないため、<br />
+              ランダムで手札からカードを選出して再開します。
             </p>
             {gameView.isPlayer1 ? (
-              <button
-                onClick={handleResume}
-                disabled={playing}
-                style={{
-                  padding: "10px 28px",
-                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "10px",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  cursor: playing ? "not-allowed" : "pointer",
-                  opacity: playing ? 0.7 : 1,
-                }}
-              >
-                再開
-              </button>
+              resumeCountdown !== null ? (
+                <div style={{ fontSize: "48px", fontWeight: "900", color: "#3b82f6" }}>
+                  {resumeCountdown}
+                </div>
+              ) : (
+                <button
+                  onClick={handleResume}
+                  disabled={playing}
+                  style={{
+                    padding: "10px 28px",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    cursor: playing ? "not-allowed" : "pointer",
+                    opacity: playing ? 0.7 : 1,
+                  }}
+                >
+                  再開
+                </button>
+              )
             ) : (
               <p style={{ color: "#64748b", fontSize: "12px" }}>プレイヤー1の操作を待っています...</p>
             )}
@@ -829,6 +859,25 @@ export default function GamePage({
           ルーム: {roomId}
         </p>
       </div>
+
+      {/* Game start countdown overlay */}
+      {countdown !== null && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ fontSize: "120px", fontWeight: "900", color: "#fff", textAlign: "center" }}>
+            {countdown === 0 ? "スタート！" : countdown}
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes pulse {
