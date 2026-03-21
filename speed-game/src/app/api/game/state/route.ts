@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGame, getRoom, setGame } from "@/lib/store";
-import { getPlayerView, isStuck } from "@/lib/game";
+import { getPlayerView, isStuck, autoFlipFromHands } from "@/lib/game";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -24,6 +24,12 @@ export async function GET(req: NextRequest) {
       player1Joined: !!room.player1Id,
       player2Joined: !!room.player2Id,
     });
+  }
+
+  // If resuming countdown has expired, execute the auto-flip
+  if (game.status === "resuming" && game.resumeAt && Date.now() >= game.resumeAt) {
+    game = autoFlipFromHands({ ...game, status: "playing" });
+    await setGame(roomId, game);
   }
 
   // If stuck and not yet paused, transition to stuck status

@@ -14,7 +14,7 @@ export interface PlayerState {
   stock: Card[];     // face-down pile
 }
 
-export type GameStatus = "waiting" | "playing" | "stuck" | "finished";
+export type GameStatus = "waiting" | "playing" | "stuck" | "resuming" | "finished";
 
 export interface GameState {
   roomId: string;
@@ -23,8 +23,10 @@ export interface GameState {
   status: GameStatus;
   winner?: string;       // player id
   lastUpdated: number;
-  lastAutoFlipAt?: number;     // timestamp of last auto-flip (stuck detection)
-  centerPileLastPlayerId: (string | null)[]; // last player who placed on each pile
+  gameStartAt: number;   // for game start countdown
+  resumeAt?: number;     // for resume countdown
+  lastAutoFlipAt?: number;
+  centerPileLastPlayerId: (string | null)[];
 }
 
 export interface PlayCardAction {

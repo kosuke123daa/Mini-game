@@ -59,12 +59,14 @@ export function createGame(roomId: string, player1Id: string, player2Id: string)
   const centerCard1 = player1.stock.pop()!;
   const centerCard2 = player2.stock.pop()!;
 
+  const now = Date.now();
   return {
     roomId,
     players: [player1, player2],
     centerPiles: [[centerCard1], [centerCard2]],
     status: "playing",
-    lastUpdated: Date.now(),
+    lastUpdated: now,
+    gameStartAt: now,
     centerPileLastPlayerId: [null, null],
   };
 }
@@ -198,6 +200,7 @@ export function getPlayerView(state: GameState, playerId: string) {
     myName: player.name,
     opponentName: opponent?.name ?? "Waiting...",
     lastUpdated: state.lastUpdated,
-    lastAutoFlipAt: state.lastAutoFlipAt,
+    gameStartAt: state.gameStartAt,
+    resumeAt: state.resumeAt,
   };
 }

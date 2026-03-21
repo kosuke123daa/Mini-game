@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGame, setGame } from "@/lib/store";
-import { autoFlipFromHands } from "@/lib/game";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -24,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Only player 1 can resume" }, { status: 403 });
   }
 
-  const newState = autoFlipFromHands({ ...game, status: "playing" });
-  await setGame(roomId, newState);
+  // Start 2-second countdown visible to both players
+  await setGame(roomId, { ...game, status: "resuming", resumeAt: Date.now() + 2000, lastUpdated: Date.now() });
   return NextResponse.json({ success: true });
 }

@@ -17,7 +17,7 @@ interface PileView {
 
 interface GameView {
   roomId: string;
-  status: "waiting" | "playing" | "stuck" | "finished";
+  status: "waiting" | "playing" | "stuck" | "resuming" | "finished";
   winner?: string;
   centerPiles: PileView[];
   myHand: Card[];
@@ -29,7 +29,8 @@ interface GameView {
   myName: string;
   opponentName: string;
   lastUpdated: number;
-  lastAutoFlipAt?: number;
+  gameStartAt: number;
+  resumeAt?: number;
 }
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -307,7 +308,6 @@ export default function GamePage({
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastUpdatedRef = useRef<number>(0);
-  const wasWaitingRef = useRef<boolean>(false);
 
   const showMessage = useCallback((msg: string, duration = 1500) => {
     setMessage(msg);
@@ -339,18 +339,18 @@ export default function GamePage({
       if (!res.ok) return;
       const data = await res.json();
       if (data.status === "waiting") {
-        wasWaitingRef.current = true;
         setWaitingStatus({
           player1Joined: data.player1Joined,
           player2Joined: data.player2Joined,
         });
         setGameView(null);
       } else {
-        if (wasWaitingRef.current && data.status === "playing") {
-          wasWaitingRef.current = false;
-          startCountdown(3);
-        }
         if (data.lastUpdated !== lastUpdatedRef.current) {
+          // First time seeing game state: start game start countdown if within 3s
+          if (lastUpdatedRef.current === 0 && data.gameStartAt) {
+            const remaining = data.gameStartAt + 3000 - Date.now();
+            if (remaining > 0) startCountdown(Math.ceil(remaining / 1000));
+          }
           lastUpdatedRef.current = data.lastUpdated;
           setGameView(data);
           setWaitingStatus(null);
@@ -372,6 +372,25 @@ export default function GamePage({
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [fetchState, playerId, router]);
+
+  // Resume countdown: driven by server-side resumeAt timestamp, visible to both players
+  useEffect(() => {
+    if (gameView?.status !== "resuming" || !gameView.resumeAt) {
+      setResumeCountdown(null);
+      return;
+    }
+    const update = () => {
+      const remaining = gameView.resumeAt! - Date.now();
+      if (remaining <= 0) {
+        setResumeCountdown(null);
+      } else {
+        setResumeCountdown(Math.ceil(remaining / 1000));
+      }
+    };
+    update();
+    const id = setInterval(update, 100);
+    return () => clearInterval(id);
+  }, [gameView?.status, gameView?.resumeAt]);
 
   async function handlePlayCard(cardId: string) {
     if (playing || gameView?.status !== "playing") return;
@@ -419,11 +438,6 @@ export default function GamePage({
   async function handleResume() {
     if (playing) return;
     setPlaying(true);
-    setResumeCountdown(2);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-    setResumeCountdown(1);
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-    setResumeCountdown(null);
     try {
       await fetch("/api/game/resume", {
         method: "POST",
@@ -754,36 +768,34 @@ export default function GamePage({
         </div>
 
         {/* Stuck state */}
-        {gameView.status === "stuck" && (
+        {(gameView.status === "stuck" || gameView.status === "resuming") && (
           <div style={{ textAlign: "center", marginTop: "12px" }}>
             <p style={{ color: "#f59e0b", fontSize: "13px", fontWeight: "600", marginBottom: "8px", lineHeight: 1.6 }}>
               両プレイヤーが出せるカードがないため、<br />
               ランダムで手札からカードを選出して再開します。
             </p>
-            {gameView.isPlayer1 ? (
-              resumeCountdown !== null ? (
-                <div style={{ fontSize: "48px", fontWeight: "900", color: "#3b82f6" }}>
-                  {resumeCountdown}
-                </div>
-              ) : (
-                <button
-                  onClick={handleResume}
-                  disabled={playing}
-                  style={{
-                    padding: "10px 28px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    cursor: playing ? "not-allowed" : "pointer",
-                    opacity: playing ? 0.7 : 1,
-                  }}
-                >
-                  再開
-                </button>
-              )
+            {gameView.status === "resuming" ? (
+              <div style={{ fontSize: "48px", fontWeight: "900", color: "#3b82f6" }}>
+                {resumeCountdown ?? ""}
+              </div>
+            ) : gameView.isPlayer1 ? (
+              <button
+                onClick={handleResume}
+                disabled={playing}
+                style={{
+                  padding: "10px 28px",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  cursor: playing ? "not-allowed" : "pointer",
+                  opacity: playing ? 0.7 : 1,
+                }}
+              >
+                再開
+              </button>
             ) : (
               <p style={{ color: "#64748b", fontSize: "12px" }}>プレイヤー1の操作を待っています...</p>
             )}
