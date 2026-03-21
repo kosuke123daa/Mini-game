@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "cd speed-game && npm run build",
+  "installCommand": "cd speed-game && npm install",
+  "outputDirectory": "speed-game/.next"
+}
