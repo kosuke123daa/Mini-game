@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const game = getGame(roomId);
+  const game = await getGame(roomId);
   if (!game) {
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
   }
@@ -20,6 +20,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: result.message }, { status: 400 });
   }
 
-  setGame(roomId, result.state);
+  await setGame(roomId, result.state);
   return NextResponse.json({ success: true });
 }

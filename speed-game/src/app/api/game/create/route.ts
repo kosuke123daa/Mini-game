@@ -9,6 +9,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "playerId required" }, { status: 400 });
   }
 
-  const roomId = createRoom(playerId);
+  const roomId = await createRoom(playerId);
   return NextResponse.json({ roomId });
 }

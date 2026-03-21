@@ -11,14 +11,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "roomId and playerId required" }, { status: 400 });
   }
 
-  const room = getRoom(roomId);
+  const room = await getRoom(roomId);
   if (!room) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 });
   }
 
-  const game = getGame(roomId);
+  const game = await getGame(roomId);
   if (!game) {
-    // Game not started yet - waiting for opponent
     return NextResponse.json({
       status: "waiting",
       roomId,
