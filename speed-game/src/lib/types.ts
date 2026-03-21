@@ -20,11 +20,9 @@ export interface GameState {
   roomId: string;
   players: PlayerState[];
   centerPiles: Card[][];  // 2 center piles
-  speedPiles: Card[][];   // 2 speed piles (flipped when stuck)
   status: GameStatus;
   winner?: string;       // player id
   lastUpdated: number;
-  pendingSpeedVotes: string[]; // player ids who voted for speed
   lastAutoFlipAt?: number;     // timestamp of last auto-flip (stuck detection)
   centerPileLastPlayerId: (string | null)[]; // last player who placed on each pile
 }
@@ -34,9 +32,4 @@ export interface PlayCardAction {
   playerId: string;
   cardId: string;
   pileIndex: number; // 0 or 1
-}
-
-export interface SpeedAction {
-  roomId: string;
-  playerId: string;
 }

@@ -27,8 +27,6 @@ interface GameView {
   myId: string;
   myName: string;
   opponentName: string;
-  hasSpeedVote: boolean;
-  opponentHasSpeedVote: boolean;
   lastUpdated: number;
   lastAutoFlipAt?: number;
 }
@@ -394,23 +392,6 @@ export default function GamePage({
       }
     } catch {
       showMessage("エラーが発生しました");
-    } finally {
-      setPlaying(false);
-    }
-  }
-
-  async function handleSpeed() {
-    if (playing) return;
-    setPlaying(true);
-    try {
-      await fetch("/api/game/speed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId, playerId }),
-      });
-      await fetchState();
-    } catch {
-      // ignore
     } finally {
       setPlaying(false);
     }

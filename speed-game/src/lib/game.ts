@@ -63,10 +63,8 @@ export function createGame(roomId: string, player1Id: string, player2Id: string)
     roomId,
     players: [player1, player2],
     centerPiles: [[centerCard1], [centerCard2]],
-    speedPiles: [[], []],
     status: "playing",
     lastUpdated: Date.now(),
-    pendingSpeedVotes: [],
     centerPileLastPlayerId: [null, null],
   };
 }
@@ -122,48 +120,11 @@ export function playCard(
     newState.winner = playerId;
   }
 
-  // Reset speed votes since a move was made
-  newState.pendingSpeedVotes = [];
   newState.lastUpdated = Date.now();
 
   return { success: true, state: newState };
 }
 
-export function requestSpeed(
-  state: GameState,
-  playerId: string
-): { flipped: boolean; state: GameState } {
-  if (state.status !== "playing") {
-    return { flipped: false, state };
-  }
-
-  // Deep clone
-  const newState: GameState = JSON.parse(JSON.stringify(state));
-
-  // Add vote if not already voted
-  if (!newState.pendingSpeedVotes.includes(playerId)) {
-    newState.pendingSpeedVotes.push(playerId);
-  }
-
-  // If both players voted, flip cards from each player's stock to center piles
-  if (newState.pendingSpeedVotes.length >= 2) {
-    newState.pendingSpeedVotes = [];
-
-    for (let i = 0; i < 2; i++) {
-      const player = newState.players[i];
-      if (player.stock.length > 0) {
-        const card = player.stock.pop()!;
-        newState.centerPiles[i].push(card);
-      }
-    }
-
-    newState.lastUpdated = Date.now();
-    return { flipped: true, state: newState };
-  }
-
-  newState.lastUpdated = Date.now();
-  return { flipped: false, state: newState };
-}
 
 export function canPlayerPlay(player: PlayerState, centerPiles: Card[][]): boolean {
   for (const card of player.hand) {
@@ -192,6 +153,11 @@ export function autoFlipFromHands(state: GameState): GameState {
       // Draw from stock to refill hand
       if (player.stock.length > 0 && player.hand.length < 4) {
         player.hand.push(player.stock.pop()!);
+      }
+      // Check win condition
+      if (player.hand.length === 0 && player.stock.length === 0) {
+        newState.status = "finished";
+        newState.winner = player.id;
       }
     }
   }
@@ -230,8 +196,6 @@ export function getPlayerView(state: GameState, playerId: string) {
     myId: playerId,
     myName: player.name,
     opponentName: opponent?.name ?? "Waiting...",
-    hasSpeedVote: state.pendingSpeedVotes.includes(playerId),
-    opponentHasSpeedVote: state.pendingSpeedVotes.includes(opponent?.id ?? ""),
     lastUpdated: state.lastUpdated,
     lastAutoFlipAt: state.lastAutoFlipAt,
   };
