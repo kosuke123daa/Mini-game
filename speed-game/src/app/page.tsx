@@ -228,9 +228,9 @@ export default function Home() {
         </h3>
         <ul style={{ color: "#64748b", fontSize: "12px", lineHeight: "1.8", paddingLeft: "0", listStyle: "none" }}>
           <li>• 手札から中央の山に1つ数字が違うカードを置く</li>
-          <li>• A は K の隣として扱う（A-2, K-A）</li>
+          <li>• A は K の隣として扱う（K-A もOK）</li>
           <li>• 先に全てのカードを使い切った方が勝ち！</li>
-          <li>• 置けない場合は「スピード！」ボタンで同時に追加</li>
+          <li>• 両者が置けない場合はスタック状態になり、ランダムで手札からカードが追加される</li>
         </ul>
       </div>
     </div>
