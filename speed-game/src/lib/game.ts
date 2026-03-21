@@ -64,6 +64,7 @@ export function createGame(roomId: string, player1Id: string, player2Id: string)
     status: "playing",
     lastUpdated: Date.now(),
     pendingSpeedVotes: [],
+    centerPileLastPlayerId: [null, null],
   };
 }
 
@@ -103,8 +104,9 @@ export function playCard(
   // Remove card from hand
   newPlayer.hand.splice(cardIdx, 1);
 
-  // Add card to pile
+  // Add card to pile and record who placed it
   newState.centerPiles[pileIndex].push(card);
+  newState.centerPileLastPlayerId[pileIndex] = playerId;
 
   // Draw from stock if available
   if (newPlayer.stock.length > 0 && newPlayer.hand.length < 4) {
@@ -209,9 +211,14 @@ export function getPlayerView(state: GameState, playerId: string) {
     roomId: state.roomId,
     status: state.status,
     winner: state.winner,
-    centerPiles: state.centerPiles.map((pile) => ({
+    centerPiles: state.centerPiles.map((pile, i) => ({
       topCard: pile[pile.length - 1] ?? null,
       count: pile.length,
+      lastPlayer: (state.centerPileLastPlayerId?.[i] ?? null) === null
+        ? null
+        : state.centerPileLastPlayerId[i] === playerId
+        ? "あなた"
+        : (opponent?.name ?? "相手"),
     })),
     myHand: player.hand,
     myStockCount: player.stock.length,

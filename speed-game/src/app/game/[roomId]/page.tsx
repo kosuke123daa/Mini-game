@@ -12,6 +12,7 @@ interface Card {
 interface PileView {
   topCard: Card | null;
   count: number;
+  lastPlayer: string | null;
 }
 
 interface GameView {
@@ -225,6 +226,7 @@ function CenterPile({
   selected: boolean;
   onClick: () => void;
 }) {
+  const isMe = pile.lastPlayer === "あなた";
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
@@ -256,6 +258,26 @@ function CenterPile({
               boxShadow: "0 0 15px rgba(34,197,94,0.5)",
             }}
           />
+        )}
+        {pile.lastPlayer && (
+          <div
+            style={{
+              position: "absolute",
+              top: -20,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: isMe ? "#1d4ed8" : "#7c3aed",
+              color: "#fff",
+              fontSize: 10,
+              fontWeight: 700,
+              padding: "2px 7px",
+              borderRadius: 99,
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+            }}
+          >
+            {pile.lastPlayer}
+          </div>
         )}
       </div>
       <span style={{ color: "#64748b", fontSize: 11 }}>{pile.count}枚</span>
