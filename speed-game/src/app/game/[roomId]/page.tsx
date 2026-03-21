@@ -734,7 +734,7 @@ export default function GamePage({
         {gameView.status === "stuck" && (
           <div style={{ textAlign: "center", marginTop: "12px" }}>
             <p style={{ color: "#f59e0b", fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>
-              動けない！
+              両プレイヤーが出せるカードがないため、ランダムで手札からカードを選出して再開します。
             </p>
             {gameView.isPlayer1 ? (
               <button
