@@ -109,9 +109,9 @@ export function playCard(
   newState.centerPiles[pileIndex].push(card);
   newState.centerPileLastPlayerId[pileIndex] = playerId;
 
-  // Draw from stock if available
+  // Draw from stock if available - insert at the same position as the played card
   if (newPlayer.stock.length > 0 && newPlayer.hand.length < 4) {
-    newPlayer.hand.push(newPlayer.stock.pop()!);
+    newPlayer.hand.splice(cardIdx, 0, newPlayer.stock.pop()!);
   }
 
   // Check win condition: no cards left in hand AND stock
@@ -194,6 +194,7 @@ export function getPlayerView(state: GameState, playerId: string) {
     opponentHandCount: opponent?.hand.length ?? 0,
     opponentStockCount: opponent?.stock.length ?? 0,
     myId: playerId,
+    isPlayer1: playerIdx === 0,
     myName: player.name,
     opponentName: opponent?.name ?? "Waiting...",
     lastUpdated: state.lastUpdated,

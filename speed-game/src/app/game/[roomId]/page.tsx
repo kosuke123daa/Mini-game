@@ -17,7 +17,7 @@ interface PileView {
 
 interface GameView {
   roomId: string;
-  status: "waiting" | "playing" | "finished";
+  status: "waiting" | "playing" | "stuck" | "finished";
   winner?: string;
   centerPiles: PileView[];
   myHand: Card[];
@@ -25,6 +25,7 @@ interface GameView {
   opponentHandCount: number;
   opponentStockCount: number;
   myId: string;
+  isPlayer1: boolean;
   myName: string;
   opponentName: string;
   lastUpdated: number;
@@ -355,7 +356,7 @@ export default function GamePage({
   }, [fetchState, playerId, router]);
 
   async function handlePlayCard(cardId: string) {
-    if (playing) return;
+    if (playing || gameView?.status !== "playing") return;
 
     // If no card selected, select this card
     if (selectedCard !== cardId) {
@@ -392,6 +393,23 @@ export default function GamePage({
       }
     } catch {
       showMessage("エラーが発生しました");
+    } finally {
+      setPlaying(false);
+    }
+  }
+
+  async function handleResume() {
+    if (playing) return;
+    setPlaying(true);
+    try {
+      await fetch("/api/game/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId, playerId }),
+      });
+      await fetchState();
+    } catch {
+      // ignore
     } finally {
       setPlaying(false);
     }
@@ -712,8 +730,38 @@ export default function GamePage({
           ))}
         </div>
 
+        {/* Stuck state */}
+        {gameView.status === "stuck" && (
+          <div style={{ textAlign: "center", marginTop: "12px" }}>
+            <p style={{ color: "#f59e0b", fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>
+              動けない！
+            </p>
+            {gameView.isPlayer1 ? (
+              <button
+                onClick={handleResume}
+                disabled={playing}
+                style={{
+                  padding: "10px 28px",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  cursor: playing ? "not-allowed" : "pointer",
+                  opacity: playing ? 0.7 : 1,
+                }}
+              >
+                再開
+              </button>
+            ) : (
+              <p style={{ color: "#64748b", fontSize: "12px" }}>プレイヤー1の操作を待っています...</p>
+            )}
+          </div>
+        )}
+
         {/* Hint */}
-        {selectedCard && (
+        {gameView.status === "playing" && selectedCard && (
           <p
             style={{
               textAlign: "center",
@@ -726,7 +774,7 @@ export default function GamePage({
             ↑ 置きたい山をタップ
           </p>
         )}
-        {!selectedCard && (
+        {gameView.status === "playing" && !selectedCard && (
           <p style={{ textAlign: "center", color: "#334155", fontSize: "11px", marginTop: "8px" }}>
             カードを選んで山に置こう
           </p>

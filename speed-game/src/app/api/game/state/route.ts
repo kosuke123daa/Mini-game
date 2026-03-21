@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGame, getRoom, setGame } from "@/lib/store";
-import { getPlayerView, isStuck, autoFlipFromHands } from "@/lib/game";
+import { getPlayerView, isStuck } from "@/lib/game";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -26,14 +26,10 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Auto-flip if stuck (debounce: only if last flip was >2s ago)
+  // If stuck and not yet paused, transition to stuck status
   if (isStuck(game)) {
-    const now = Date.now();
-    const lastFlip = game.lastAutoFlipAt ?? 0;
-    if (now - lastFlip > 2000) {
-      game = autoFlipFromHands(game);
-      await setGame(roomId, game);
-    }
+    game = { ...game, status: "stuck", lastUpdated: Date.now() };
+    await setGame(roomId, game);
   }
 
   const view = getPlayerView(game, playerId);

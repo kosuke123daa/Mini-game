@@ -14,7 +14,7 @@ export interface PlayerState {
   stock: Card[];     // face-down pile
 }
 
-export type GameStatus = "waiting" | "playing" | "finished";
+export type GameStatus = "waiting" | "playing" | "stuck" | "finished";
 
 export interface GameState {
   roomId: string;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGame, setGame } from "@/lib/store";
-import { playCard, isStuck, autoFlipFromHands } from "@/lib/game";
+import { playCard, isStuck } from "@/lib/game";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -22,11 +22,7 @@ export async function POST(req: NextRequest) {
 
   let finalState = result.state;
   if (isStuck(finalState)) {
-    const now = Date.now();
-    const lastFlip = finalState.lastAutoFlipAt ?? 0;
-    if (now - lastFlip > 2000) {
-      finalState = autoFlipFromHands(finalState);
-    }
+    finalState = { ...finalState, status: "stuck", lastUpdated: Date.now() };
   }
 
   await setGame(roomId, finalState);
