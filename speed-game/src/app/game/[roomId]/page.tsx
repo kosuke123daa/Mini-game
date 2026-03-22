@@ -227,6 +227,19 @@ function CenterPile({
   onClick: () => void;
 }) {
   const isMe = pile.lastPlayer === "あなた";
+  const prevCardId = useRef<string | null>(null);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    const currentId = pile.topCard?.id ?? null;
+    if (currentId && currentId !== prevCardId.current) {
+      prevCardId.current = currentId;
+      setAnimating(true);
+      const t = setTimeout(() => setAnimating(false), 400);
+      return () => clearTimeout(t);
+    }
+  }, [pile.topCard?.id]);
+
   return (
     <div
       style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
@@ -241,7 +254,11 @@ function CenterPile({
         }}
       >
         {pile.topCard ? (
-          <div style={{ transform: selected ? "scale(1.05)" : "scale(1)", transition: "transform 0.15s" }}>
+          <div style={{
+            transform: selected ? "scale(1.05)" : "scale(1)",
+            transition: "transform 0.15s",
+            animation: animating ? "cardDrop 0.35s ease-out" : "none",
+          }}>
             <CardComponent card={pile.topCard} small={false} />
           </div>
         ) : (
@@ -895,6 +912,11 @@ export default function GamePage({
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        @keyframes cardDrop {
+          0%   { transform: translateY(-28px) scale(0.82); opacity: 0.3; }
+          55%  { transform: translateY(5px) scale(1.07);  opacity: 1; }
+          100% { transform: translateY(0)   scale(1);     opacity: 1; }
         }
       `}</style>
     </div>
